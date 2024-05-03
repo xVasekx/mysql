@@ -1,0 +1,30 @@
+---
+  - name: Copy dump database
+    copy:
+      src: master.sql
+      dest: master.sql
+
+  - name: Restore database 'master.sql'
+    mysql_db:
+      name: all
+      state: import
+      target: master.sql
+
+        #  - name: Simple select query to acme db
+        #    mysql_query:
+        #      quiery: SOURCE /home/vagrant/master.sql
+
+  - name: Configure replication on the replica
+    mysql_replication:
+      mode: changeprimary
+      primary_host: "{{ mysql_replication_primary }}"
+      primary_user: "{{ mysql_replication_user }}"
+      primary_password: "{{ mysql_replication_password }}"
+      primary_auto_position: "1"
+    register: replica
+
+  - name: Start replication.
+    mysql_replication:
+      mode: startreplica
+    when:
+      - replica.changed
